@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: mall-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: products
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - mall-network
+
+  # 后端服务
+  backend:
+    build: ./backend
+    container_name: mall-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_USERNAME: root
+      DB_PASSWORD: root123
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+    networks:
+      - mall-network
+
+  # 前端服务
+  frontend:
+    build: ./frontend
+    container_name: mall-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - mall-network
+
+volumes:
+  mysql_data:
+
+networks:
+  mall-network:
+    driver: bridge

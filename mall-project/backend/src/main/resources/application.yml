@@ -1,0 +1,41 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: mall-backend
+  
+  # MySQL 生产环境配置
+  datasource:
+    url: jdbc:mysql://8.148.192.5:17456/database/mysql/products?serverTimezone=GMT%2B8&characterEncoding=utf-8&useSSL=false
+    username: products
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+
+  # JPA配置
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: false
+
+# 日志配置
+logging:
+  level:
+    com.mall: INFO
+    org.hibernate.SQL: WARN
+  file:
+    name: logs/mall.log
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

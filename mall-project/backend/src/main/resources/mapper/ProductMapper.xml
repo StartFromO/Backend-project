@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mall.mapper.ProductMapper">
+
+    <!-- ==================== 结果映射 ==================== -->
+    <resultMap id="BaseResultMap" type="com.mall.entity.Product">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="description" property="description"/>
+        <result column="price" property="price"/>
+        <result column="original_price" property="originalPrice"/>
+        <result column="stock" property="stock"/>
+        <result column="category" property="category"/>
+        <result column="image_url" property="imageUrl"/>
+        <result column="is_hot" property="isHot"/>
+        <result column="sales" property="sales"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- ==================== 通用列 ==================== -->
+    <sql id="Base_Column_List">
+        id, name, description, price, original_price, stock, category,
+        image_url, is_hot, sales, status, create_time, update_time
+    </sql>
+
+    <!-- ==================== 新增 ==================== -->
+
+    <!-- 单条插入（全字段） -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO products (
+            name, description, price, original_price, stock, category,
+            image_url, is_hot, sales, status, create_time, update_time
+        ) VALUES (
+                     #{name}, #{description}, #{price}, #{originalPrice}, #{stock}, #{category},
+                     #{imageUrl}, #{isHot}, #{sales}, #{status}, NOW(), NOW()
+                 )
+    </insert>
+
+
+    <!-- 批量插入 -->
+    <insert id="batchInsert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO product (
+        name, description, price, original_price, stock, category,
+        image_url, is_hot, sales, status, create_time, update_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.name}, #{item.description}, #{item.price}, #{item.originalPrice},
+            #{item.stock}, #{item.category}, #{item.imageUrl}, #{item.isHot},
+            #{item.sales}, #{item.status}, NOW(), NOW()
+            )
+        </foreach>
+    </insert>
+
+    <!-- ==================== 删除 ==================== -->
+
+    <!-- 根据ID删除 -->
+    <delete id="deleteById">
+        DELETE FROM products WHERE id = #{id}
+    </delete>
+
+    <!-- 根据ID列表批量删除 -->
+    <delete id="deleteByIds">
+        DELETE FROM product WHERE id IN
+        <foreach collection="list" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+
+    <!-- ==================== 修改 ==================== -->
+
+    <!-- 全字段更新 -->
+    <update id="updateById">
+        UPDATE products
+        SET
+            name = #{name},
+            description = #{description},
+            price = #{price},
+            original_price = #{originalPrice},
+            stock = #{stock},
+            category = #{category},
+            image_url = #{imageUrl},
+            is_hot = #{isHot},
+            sales = #{sales},
+            status = #{status},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+
+    <!-- 库存扣减（防止超卖） -->
+    <update id="deductStock">
+        UPDATE products
+        SET stock = stock - #{quantity}, sales = sales + #{quantity}, update_time = NOW()
+        WHERE id = #{id} AND stock >= #{quantity}
+    </update>
+
+    <!-- 增加销量 -->
+    <update id="addSales">
+        UPDATE products
+        SET sales = sales + #{quantity}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- ==================== 查询 ==================== -->
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM product
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据ID列表查询 -->
+    <select id="selectByIds" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM product
+        WHERE id IN
+        <foreach collection="list" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
+    <!-- 查询所有 -->
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM product
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 条件查询（动态SQL） -->
+    <select id="selectByCondition" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM product
+        <where>
+            <if test="name != null and name != ''">
+                AND name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="category != null and category != ''">
+                AND category = #{category}
+            </if>
+            <if test="minPrice != null">
+                AND price >= #{minPrice}
+            </if>
+            <if test="maxPrice != null">
+                AND price &lt;= #{maxPrice}
+            </if>
+            <if test="isHot != null">
+                AND is_hot = #{isHot}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="minStock != null">
+                AND stock >= #{minStock}
+            </if>
+        </where>
+        ORDER BY
+        <choose>
+            <when test="sortField == 'price'">price</when>
+            <when test="sortField == 'sales'">sales</when>
+            <when test="sortField == 'createTime'">create_time</when>
+            <otherwise>create_time</otherwise>
+        </choose>
+        <choose>
+            <when test="sortOrder == 'asc'">ASC</when>
+            <otherwise>DESC</otherwise>
+        </choose>
+    </select>
+
+    <!-- 查询热销商品 -->
+    <select id="selectHotProducts" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM product
+        WHERE is_hot = 1 AND status = 1 AND stock > 0
+        ORDER BY sales DESC, create_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询分类下的商品 -->
+    <select id="selectByCategory" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM product
+        WHERE category = #{category} AND status = 1
+        ORDER BY is_hot DESC, sales DESC
+    </select>
+
+
+</mapper>
