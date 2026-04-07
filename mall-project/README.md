@@ -2,6 +2,14 @@
 
 一个基于 Spring Boot + Vue3 的全栈商城项目，包含商品增删改查、热门推荐、搜索等功能。
 
+![](../images/1.png)
+
+![](../images/2.png)
+
+![3](../images/3.png)
+
+![4](../images/4.png)
+
 ## 技术栈
 
 ### 后端
